@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:scoped_model/scoped_model.dart';
+import '../scoped/main.dart';
 
 class AuthPage extends StatefulWidget {
   @override
@@ -28,10 +30,11 @@ class _AuthPageState extends State<AuthPage> {
           labelText: 'E-Mail', filled: true, fillColor: Colors.white),
       keyboardType: TextInputType.emailAddress,
       validator: (String value) {
-        if(value.isEmpty 
-          || !RegExp(r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?").hasMatch(value)){
-            return "Incorrect email";
-          }
+        if (value.isEmpty ||
+            !RegExp(r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?")
+                .hasMatch(value)) {
+          return "Incorrect email";
+        }
       },
       onSaved: (String value) => _emailValue = value,
     );
@@ -43,9 +46,9 @@ class _AuthPageState extends State<AuthPage> {
           labelText: 'Password', filled: true, fillColor: Colors.white),
       obscureText: true,
       validator: (String value) {
-        if(value.isEmpty || value.trim().length < 6) {
-            return "Incorrect password";
-          }
+        if (value.isEmpty || value.trim().length < 6) {
+          return "Incorrect password";
+        }
       },
       onSaved: (String value) => _passwordValue = value,
     );
@@ -63,13 +66,12 @@ class _AuthPageState extends State<AuthPage> {
     );
   }
 
-  void _submitForm() {
-    if(!_formKey.currentState.validate() || !_acceptTerms){
+  void _submitForm(Function login) {
+    if (!_formKey.currentState.validate() || !_acceptTerms) {
       return;
     }
     _formKey.currentState.save();
-    print(_emailValue);
-    print(_passwordValue);
+    login(_emailValue, _passwordValue);
     Navigator.pushReplacementNamed(context, '/products');
   }
 
@@ -103,11 +105,15 @@ class _AuthPageState extends State<AuthPage> {
                     SizedBox(
                       height: 10.0,
                     ),
-                    RaisedButton(
-                      color: Theme.of(context).primaryColor,
-                      textColor: Colors.white,
-                      child: Text('LOGIN'),
-                      onPressed: _submitForm,
+                    ScopedModelDescendant<MainModel>(
+                      builder: (BuildContext context, Widget child,
+                              MainModel model) =>
+                          RaisedButton(
+                            color: Theme.of(context).primaryColor,
+                            textColor: Colors.white,
+                            child: Text('LOGIN'),
+                            onPressed: () => _submitForm(model.login),
+                          ),
                     ),
                   ],
                 ),

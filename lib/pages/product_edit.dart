@@ -61,26 +61,43 @@ class _ProductEditPageState extends State<ProductEditPage> {
     );
   }
 
-  void _submitForm(Function addProduct, Function updateProduct,
-      [int selectedProductIndex]) {
+  void _submitForm(Function addProduct, Function updateProduct, Function setSelectedProduct,
+      [String selectedProductId]) {
     if (!_formKey.currentState.validate()) {
       return;
     }
     _formKey.currentState.save();
-    if (selectedProductIndex == null) {
+    if (selectedProductId == null) {
       addProduct(
         _formData['title'],
         _formData['description'],
         _formData['image'],
-         _formData['price']);
+        _formData['price'])
+        .then((bool isSuccess) {
+           if(!isSuccess) {
+             showDialog(context: context, 
+              builder: (BuildContext context) {
+               return AlertDialog(
+                  title: Text("Something went wrong"), 
+                  content: Text('Try again later'), 
+                  actions: <Widget>[
+                    FlatButton(onPressed: () => Navigator.of(context).pop(),
+                    child: Text('Ok')),
+                  ],);
+              });
+           } else {
+             Navigator.pushReplacementNamed(context, '/products').then((_) => setSelectedProduct(null));
+           }
+         });
     } else {
       updateProduct(
         _formData['title'],
         _formData['description'],
         _formData['image'],
-        _formData['price']);
+        _formData['price'])
+        .then((_) => Navigator.pushReplacementNamed(context, '/products').then((_) => setSelectedProduct(null)));
     }
-    Navigator.pushReplacementNamed(context, '/products');
+    
   }
 
   @override
@@ -88,7 +105,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
     return ScopedModelDescendant<MainModel>(
         builder: (BuildContext context, Widget child, MainModel model) {
       Widget pageContent = buildPageContent(context, model.selectedProduct);
-      return model.selectedProdcutIndex == null
+      return model.selectedProdcutId == null
           ? pageContent
           : Scaffold(
               appBar: AppBar(title: Text('Edit product')), body: pageContent);
@@ -124,12 +141,17 @@ class _ProductEditPageState extends State<ProductEditPage> {
 
   Widget buildSubmitButton() {
     return ScopedModelDescendant<MainModel>(
-        builder: (BuildContext context, Widget child, MainModel model) =>
-            RaisedButton(
-              child: Text('Save'),
-              textColor: Colors.white,
-              onPressed: () => _submitForm(model.addProduct,
-                  model.updateProduct, model.selectedProdcutIndex),
-            ));
+        builder: (BuildContext context, Widget child, MainModel model) {
+          if(model.isLoading){
+            return Center(child: CircularProgressIndicator());
+          } else {
+              return RaisedButton(
+                child: Text('Save'),
+                textColor: Colors.white,
+                onPressed: () => _submitForm(model.addProduct,
+                    model.updateProduct,model.selectProduct, model.selectedProdcutId),
+              );
+          }
+        });
   }
 }

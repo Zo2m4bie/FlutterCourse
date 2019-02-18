@@ -32,4 +32,5 @@ class Products extends StatelessWidget {
       return _buildProductList(model.displayedProducts);
     });
   }
+
 }

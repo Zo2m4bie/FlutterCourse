@@ -3,9 +3,24 @@ import 'package:scoped_model/scoped_model.dart';
 import './product_edit.dart';
 import '../scoped/main.dart';
 
-class ProductListPage extends StatelessWidget {
-  ProductListPage();
+class ProductListPage extends StatefulWidget {
 
+  final MainModel model;
+
+  ProductListPage(this.model);
+
+  @override
+  State<StatefulWidget> createState() {
+    return _ProductListPageState();
+  }
+}
+
+class _ProductListPageState extends State<ProductListPage> {
+  @override
+  void initState() {
+    super.initState();
+    widget.model.fetchProduct();
+  }
   @override
   Widget build(BuildContext context) {
     return ScopedModelDescendant<MainModel>(
@@ -16,15 +31,15 @@ class ProductListPage extends StatelessWidget {
             background: Container(color: Colors.red),
             onDismissed: (DismissDirection direction) {
               if (direction == DismissDirection.endToStart) {
-                model.selectproduct(index);
-                model.deleteProduct(index);
+                model.selectProduct(model.allProducts[index].id);
+                model.deleteProduct();
               }
             },
             key: Key(model.allProducts[index].title),
             child: Column(children: <Widget>[
               ListTile(
                 leading: CircleAvatar(
-                  backgroundImage: AssetImage(model.allProducts[index].image),
+                  backgroundImage: NetworkImage(model.allProducts[index].image),
                 ),
                 title: Text(model.allProducts[index].title),
                 subtitle: Text('\$${model.allProducts[index].price.toString()}'),
@@ -43,12 +58,12 @@ class ProductListPage extends StatelessWidget {
     return IconButton(
               icon: Icon(Icons.edit),
               onPressed: () {
-                model.selectproduct(index);
+                model.selectProduct(model.allProducts[index].id);
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (BuildContext context) {
                     return ProductEditPage();
                   }),
-                );
+                ).then((_) => model.selectProduct(null));
               },
             );
   }

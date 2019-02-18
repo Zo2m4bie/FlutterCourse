@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:scoped_model/scoped_model.dart';
 import '../scoped/main.dart';
-
-enum AuthMode { SignUp, Login }
+import '../models/auth.dart';
 
 class AuthPage extends StatefulWidget {
   @override
@@ -85,17 +84,14 @@ class _AuthPageState extends State<AuthPage> {
     );
   }
 
-  void _submitForm(Function login, Function signUp) async {
+  void _submitForm(Function authenticate) async {
     if (!_formKey.currentState.validate() || !_acceptTerms) {
       return;
     }
     _formKey.currentState.save();
-    if (authMode == AuthMode.Login) {
-      login(_emailValue, _passwordValue);
-    } else {
-      final Map<String, dynamic> result =
-          await signUp(_emailValue, _passwordValue);
-      if (result['success']) {
+    Map<String, dynamic> result = await authenticate(_emailValue, _passwordValue, authMode);
+  
+    if (result['success']) {
         Navigator.pushReplacementNamed(context, '/products');
       } else {
         showDialog(
@@ -113,7 +109,6 @@ class _AuthPageState extends State<AuthPage> {
               );
             });
       }
-    }
   }
 
   @override
@@ -145,7 +140,7 @@ class _AuthPageState extends State<AuthPage> {
                     SizedBox(
                       height: 10.0,
                     ),
-                    authMode == AuthMode.SignUp
+                    authMode == AuthMode.Signup
                         ? _buildPasswordConfirmTextField()
                         : Container(),
                     _buildAcceptSwitch(),
@@ -156,7 +151,7 @@ class _AuthPageState extends State<AuthPage> {
                       onPressed: () {
                         setState(() {
                           authMode = authMode == AuthMode.Login
-                              ? AuthMode.SignUp
+                              ? AuthMode.Signup
                               : AuthMode.Login;
                         });
                       },
@@ -174,7 +169,7 @@ class _AuthPageState extends State<AuthPage> {
                             textColor: Colors.white,
                             child: Text( authMode == AuthMode.Login ? 'LOGIN' : 'SIGNUP'),
                             onPressed: () =>
-                                _submitForm(model.login, model.signUp),
+                                _submitForm(model.authenticate),
                           ),
                     ),
                   ],

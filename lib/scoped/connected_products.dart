@@ -4,12 +4,15 @@ import '../models/product.dart';
 import '../models/user.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
+import '../models/auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 mixin ConnectedProductsModel on Model {
   List<Product> _products = [];
   User _authUser;
   String _selectedProdcutId;
   bool _isLoading = false;
+  String API_KEY = "AIzaSyBd2riPskc-aTTSxA99WTtj8KJIxfYzyZ0";
 }
 
 mixin ProductsModel on ConnectedProductsModel {
@@ -35,7 +38,7 @@ mixin ProductsModel on ConnectedProductsModel {
     };
     try {
       final http.Response response = await http.post(
-          'https://test-d9e23.firebaseio.com/products.json',
+          'https://test-d9e23.firebaseio.com/products.json?auth=${_authUser.token}',
           body: json.encode(productData));
 
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -92,7 +95,7 @@ mixin ProductsModel on ConnectedProductsModel {
     notifyListeners();
     return http
         .put(
-            'https://test-d9e23.firebaseio.com/products/${selectedProduct.id}.json',
+            'https://test-d9e23.firebaseio.com/products/${selectedProduct.id}.json?auth=${_authUser.token}',
             body: json.encode(updateData))
         .then((http.Response response) {
       _isLoading = false;
@@ -120,7 +123,7 @@ mixin ProductsModel on ConnectedProductsModel {
     _products.removeAt(selectedProductIndex);
     return http
         .delete(
-            'https://test-d9e23.firebaseio.com/products/${deleteProductId}.json')
+            'https://test-d9e23.firebaseio.com/products/${deleteProductId}.json?auth=${_authUser.token}')
         .then((http.Response response) {
       _isLoading = false;
       notifyListeners();
@@ -147,7 +150,7 @@ mixin ProductsModel on ConnectedProductsModel {
     _isLoading = true;
     notifyListeners();
     return http
-        .get('https://test-d9e23.firebaseio.com/products.json')
+        .get('https://test-d9e23.firebaseio.com/products.json?auth=${_authUser.token}')
         .then((http.Response response) {
       Map<String, dynamic> productListData = json.decode(response.body);
       if (productListData == null) {
@@ -170,9 +173,6 @@ mixin ProductsModel on ConnectedProductsModel {
       _products = fetchedProductList;
       _isLoading = false;
       notifyListeners();
-    // }).catchError(() {
-    //   _isLoading = false;
-    //   notifyListeners();
     });
   }
 
@@ -185,7 +185,9 @@ mixin ProductsModel on ConnectedProductsModel {
         description: selectedProduct.description,
         price: selectedProduct.price,
         image: selectedProduct.image,
-        isFavorite: newFavoriteState);
+        isFavorite: newFavoriteState,
+        userEmail: selectedProduct.userEmail,
+        userId: selectedProduct.userId);
     _products[selectedProductIndex] = updateProduct;
     notifyListeners();
   }
@@ -207,38 +209,94 @@ mixin ProductsModel on ConnectedProductsModel {
 }
 
 mixin UserModel on ConnectedProductsModel {
-  void login(String email, String password) {
-    _authUser = User(id: 'sdfsdfsdf', email: email, password: password);
+  
+  Timer _authTimer;
+
+  User get user {
+    return _authUser;
   }
 
-  Future<Map<String, dynamic>> signUp(String email, String password) async {
+  Future<Map<String, dynamic>> authenticate(String email, String password,
+      [AuthMode mode = AuthMode.Login]) async {
     _isLoading = true;
     notifyListeners();
-    print(email);
-    print(password);
     final Map<String, dynamic> authData = {
       'email': email,
       'password': password,
       'returnSecureToken': true
     };
-    final http.Response response = await http.post(
-        "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=",
+    String requestUrl = mode == AuthMode.Login
+        ? "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${API_KEY}"
+        : "https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=${API_KEY}";
+    ;
+    final http.Response response = await http.post(requestUrl,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(authData));
-    print(json.encode(authData));
+
     final Map<String, dynamic> responseData = json.decode(response.body);
-    print(json.decode(response.body));
     bool hasError = true;
     String message = 'Something went wrong!';
-    if(responseData.containsKey('idToken')){
+    if (responseData.containsKey('idToken')) {
       hasError = false;
+      _authUser = User(id: responseData['localId'], email: email, token: responseData['idToken']);
+      setAuthTimeout(int.parse(responseData['expiresIn']));
+      final DateTime now = DateTime.now();
+      final DateTime expiryTime = now.add(Duration(seconds: int.parse(responseData['expiresIn'])));
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('token', responseData['idToken']);
+      prefs.setString('userEmail', email);
+      prefs.setString('userId', responseData['localId']);
+      prefs.setString('expiryTime', expiryTime.toIso8601String());
       message = 'Authentication succeeded!';
+    } else if (responseData['error']['message'] == 'EMAIL_NOT_FOUND') {
+      message = 'This email was not found!';
+    } else if (responseData['error']['message'] == 'INVALID_PASSWORD') {
+      message = 'The password is invalid!';
     } else if (responseData['error']['message'] == 'EMAIL_EXISTS') {
       message = 'This mail already exists!';
-    } 
+    }
+
     _isLoading = false;
     notifyListeners();
     return {'success': !hasError, 'message': message};
+  }
+
+  void autoAutenticate() async {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String token = prefs.getString('token');
+      final String expiryTimeString = prefs.getString('expiryTime');
+      if(token != null) {
+        final DateTime now = DateTime.now();
+        final DateTime parsedExpirityTime = DateTime.parse(expiryTimeString);
+        if(parsedExpirityTime.isBefore(now)){
+           _authUser = null;
+           notifyListeners();
+          return;
+        }
+
+        final String userEmail = prefs.getString('userEmail');
+        final String userId = prefs.getString('userId');
+        final tokenLifespan = parsedExpirityTime.difference(now).inSeconds;
+        _authUser = User(id: userId, email: userEmail, token: token);
+        setAuthTimeout(tokenLifespan);
+        notifyListeners();
+      }
+  }
+  
+  void logout() async {
+    _authTimer.cancel();
+    _authUser = null;
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('token');
+    prefs.remove('userEmail');
+    prefs.remove('userId');
+    prefs.remove('expiryTime');
+  }
+
+  void setAuthTimeout(int time) {
+    _authTimer = Timer(Duration(seconds: time), () {
+      logout();
+    });
   }
 }
 

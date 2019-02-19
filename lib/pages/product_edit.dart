@@ -86,7 +86,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
                   ],);
               });
            } else {
-             Navigator.pushReplacementNamed(context, '/products').then((_) => setSelectedProduct(null));
+             Navigator.pushReplacementNamed(context, '/').then((_) => setSelectedProduct(null));
            }
          });
     } else {
@@ -95,7 +95,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
         _formData['description'],
         _formData['image'],
         _formData['price'])
-        .then((_) => Navigator.pushReplacementNamed(context, '/products').then((_) => setSelectedProduct(null)));
+        .then((_) => Navigator.pushReplacementNamed(context, '/').then((_) => setSelectedProduct(null)));
     }
     
   }

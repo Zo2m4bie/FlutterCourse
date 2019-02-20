@@ -2,34 +2,34 @@ import 'package:flutter/material.dart';
 
 import './product_edit.dart';
 import './product_list.dart';
-import '../scoped/main.dart';
 import '../widgets/ui_elements/logout_list_tile.dart';
+import '../scoped-models/main.dart';
 
 class ProductsAdminPage extends StatelessWidget {
-  final MainModel mainModel;
+  final MainModel model;
 
-  ProductsAdminPage(this.mainModel);
-  
+  ProductsAdminPage(this.model);
+
   Widget _buildSideDrawer(BuildContext context) {
     return Drawer(
-          child: Column(
-            children: <Widget>[
-              AppBar(
-                automaticallyImplyLeading: false,
-                title: Text('Choose'),
-              ),
-              ListTile(
-                leading: Icon(Icons.shop),
-                title: Text('All Products'),
-                onTap: () {
-                  Navigator.pushReplacementNamed(context, '/');
-                },
-              ),
-              Divider(),
-              LogoutListTile()
-            ],
+      child: Column(
+        children: <Widget>[
+          AppBar(
+            automaticallyImplyLeading: false,
+            title: Text('Choose'),
           ),
-        );
+          ListTile(
+            leading: Icon(Icons.shop),
+            title: Text('All Products'),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/');
+            },
+          ),
+          Divider(),
+          LogoutListTile()
+        ],
+      ),
+    );
   }
 
   @override
@@ -54,7 +54,7 @@ class ProductsAdminPage extends StatelessWidget {
           ),
         ),
         body: TabBarView(
-          children: <Widget>[ProductEditPage(), ProductListPage(mainModel)],
+          children: <Widget>[ProductEditPage(), ProductListPage(model)],
         ),
       ),
     );

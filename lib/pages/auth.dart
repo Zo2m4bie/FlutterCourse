@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'package:scoped_model/scoped_model.dart';
-import '../scoped/main.dart';
+
+import '../scoped-models/main.dart';
 import '../models/auth.dart';
 
 class AuthPage extends StatefulWidget {
@@ -11,12 +13,14 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
-  String _emailValue;
-  String _passwordValue;
-  bool _acceptTerms = false;
+  final Map<String, dynamic> _formData = {
+    'email': null,
+    'password': null,
+    'acceptTerms': false
+  };
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _passwordTextController = TextEditingController();
-  AuthMode authMode = AuthMode.Login;
+  AuthMode _authMode = AuthMode.Login;
 
   DecorationImage _buildBackgroundImage() {
     return DecorationImage(
@@ -36,10 +40,29 @@ class _AuthPageState extends State<AuthPage> {
         if (value.isEmpty ||
             !RegExp(r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?")
                 .hasMatch(value)) {
-          return "Incorrect email";
+          return 'Please enter a valid email';
         }
       },
-      onSaved: (String value) => _emailValue = value,
+      onSaved: (String value) {
+        _formData['email'] = value;
+      },
+    );
+  }
+
+  Widget _buildPasswordTextField() {
+    return TextFormField(
+      decoration: InputDecoration(
+          labelText: 'Password', filled: true, fillColor: Colors.white),
+      obscureText: true,
+      controller: _passwordTextController,
+      validator: (String value) {
+        if (value.isEmpty || value.length < 6) {
+          return 'Password invalid';
+        }
+      },
+      onSaved: (String value) {
+        _formData['password'] = value;
+      },
     );
   }
 
@@ -47,37 +70,21 @@ class _AuthPageState extends State<AuthPage> {
     return TextFormField(
       decoration: InputDecoration(
           labelText: 'Confirm Password', filled: true, fillColor: Colors.white),
-      keyboardType: TextInputType.emailAddress,
       obscureText: true,
       validator: (String value) {
-        if (value != _passwordTextController.text) {
-          return "Incorrect password";
+        if (_passwordTextController.text != value) {
+          return 'Passwords do not match.';
         }
       },
-    );
-  }
-
-  Widget _buildPasswordTextField() {
-    return TextFormField(
-      controller: _passwordTextController,
-      decoration: InputDecoration(
-          labelText: 'Password', filled: true, fillColor: Colors.white),
-      obscureText: true,
-      validator: (String value) {
-        if (value.isEmpty || value.trim().length < 6) {
-          return "Incorrect password";
-        }
-      },
-      onSaved: (String value) => _passwordValue = value,
     );
   }
 
   Widget _buildAcceptSwitch() {
     return SwitchListTile(
-      value: _acceptTerms,
+      value: _formData['acceptTerms'],
       onChanged: (bool value) {
         setState(() {
-          _acceptTerms = value;
+          _formData['acceptTerms'] = value;
         });
       },
       title: Text('Accept Terms'),
@@ -85,36 +92,40 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   void _submitForm(Function authenticate) async {
-    if (!_formKey.currentState.validate() || !_acceptTerms) {
+    if (!_formKey.currentState.validate() || !_formData['acceptTerms']) {
       return;
     }
     _formKey.currentState.save();
-    Map<String, dynamic> result = await authenticate(_emailValue, _passwordValue, authMode);
-  
-    if (result['success']) {
-        // Navigator.pushReplacementNamed(context, '/');
-      } else {
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text('An error occured!'),
-                content: Text(result['message']),
-                actions: <Widget>[
-                  FlatButton(
-                    child: Text('Ok'),
-                    onPressed: () => Navigator.of(context).pop(),
-                  )
-                ],
-              );
-            });
-      }
+    Map<String, dynamic> successInformation;
+    successInformation = await authenticate(
+        _formData['email'], _formData['password'], _authMode);
+    if (successInformation['success']) {
+      // Navigator.pushReplacementNamed(context, '/');
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('An Error Occurred!'),
+            content: Text(successInformation['message']),
+            actions: <Widget>[
+              FlatButton(
+                child: Text('Okay'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          );
+        },
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final double deviceWidth = MediaQuery.of(context).size.width;
-    final double targetWidth = deviceWidth > 760 ? 500 : deviceWidth * 0.95;
+    final double targetWidth = deviceWidth > 550.0 ? 500.0 : deviceWidth * 0.95;
     return Scaffold(
       appBar: AppBar(
         title: Text('Login'),
@@ -134,13 +145,13 @@ class _AuthPageState extends State<AuthPage> {
                   children: <Widget>[
                     _buildEmailTextField(),
                     SizedBox(
-                      height: 10.9,
+                      height: 10.0,
                     ),
                     _buildPasswordTextField(),
                     SizedBox(
                       height: 10.0,
                     ),
-                    authMode == AuthMode.Signup
+                    _authMode == AuthMode.Signup
                         ? _buildPasswordConfirmTextField()
                         : Container(),
                     _buildAcceptSwitch(),
@@ -148,29 +159,33 @@ class _AuthPageState extends State<AuthPage> {
                       height: 10.0,
                     ),
                     FlatButton(
+                      child: Text(
+                          'Switch to ${_authMode == AuthMode.Login ? 'Signup' : 'Login'}'),
                       onPressed: () {
                         setState(() {
-                          authMode = authMode == AuthMode.Login
+                          _authMode = _authMode == AuthMode.Login
                               ? AuthMode.Signup
                               : AuthMode.Login;
                         });
                       },
-                      child: Text(
-                          'Switch to ${authMode == AuthMode.Login ? 'Signup' : 'Login'}'),
                     ),
                     SizedBox(
                       height: 10.0,
                     ),
                     ScopedModelDescendant<MainModel>(
                       builder: (BuildContext context, Widget child,
-                              MainModel model) => model.isLoading ? CircularProgressIndicator() :
-                          RaisedButton(
-                            color: Theme.of(context).primaryColor,
-                            textColor: Colors.white,
-                            child: Text( authMode == AuthMode.Login ? 'LOGIN' : 'SIGNUP'),
-                            onPressed: () =>
-                                _submitForm(model.authenticate),
-                          ),
+                          MainModel model) {
+                        return model.isLoading
+                            ? CircularProgressIndicator()
+                            : RaisedButton(
+                                textColor: Colors.white,
+                                child: Text(_authMode == AuthMode.Login
+                                    ? 'LOGIN'
+                                    : 'SIGNUP'),
+                                onPressed: () =>
+                                    _submitForm(model.authenticate),
+                              );
+                      },
                     ),
                   ],
                 ),

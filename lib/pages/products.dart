@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:scoped_model/scoped_model.dart';
+
 import '../widgets/products/products.dart';
-import '../scoped/main.dart';
 import '../widgets/ui_elements/logout_list_tile.dart';
+import '../scoped-models/main.dart';
 
 class ProductsPage extends StatefulWidget {
   final MainModel model;
@@ -11,14 +13,14 @@ class ProductsPage extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    return _ProductsPage();
+    return _ProductsPageState();
   }
 }
 
-class _ProductsPage extends State<ProductsPage> {
+class _ProductsPageState extends State<ProductsPage> {
   @override
   initState() {
-    widget.model.fetchProduct();
+    widget.model.fetchProducts();
     super.initState();
   }
 
@@ -44,6 +46,20 @@ class _ProductsPage extends State<ProductsPage> {
     );
   }
 
+  Widget _buildProductsList() {
+    return ScopedModelDescendant(
+      builder: (BuildContext context, Widget child, MainModel model) {
+        Widget content = Center(child: Text('No Products Found!'));
+        if (model.displayedProducts.length > 0 && !model.isLoading) {
+          content = Products();
+        } else if (model.isLoading) {
+          content = Center(child: CircularProgressIndicator());
+        }
+        return RefreshIndicator(onRefresh: model.fetchProducts, child: content,) ;
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,33 +68,20 @@ class _ProductsPage extends State<ProductsPage> {
         title: Text('EasyList'),
         actions: <Widget>[
           ScopedModelDescendant<MainModel>(
-            builder: (BuildContext context, Widget child, MainModel model) =>
-                IconButton(
-                  icon: Icon(model.displayFavoriteOnly
-                      ? Icons.favorite
-                      : Icons.favorite_border),
-                  onPressed: () => model.toggleDisplayMode(),
-                ),
-          ),
+            builder: (BuildContext context, Widget child, MainModel model) {
+              return IconButton(
+                icon: Icon(model.displayFavoritesOnly
+                    ? Icons.favorite
+                    : Icons.favorite_border),
+                onPressed: () {
+                  model.toggleDisplayMode();
+                },
+              );
+            },
+          )
         ],
       ),
       body: _buildProductsList(),
     );
-  }
-
-  Widget _buildProductsList() {
-    return ScopedModelDescendant<MainModel>(
-        builder: (BuildContext context, Widget child, MainModel model) {
-      Widget content = Center(child: Text('No Products Found!'));
-      if (model.displayedProducts.length > 0 && !model.isLoading) {
-        content = Products();
-      } else if (model.isLoading) {
-        content = Center(child: CircularProgressIndicator());
-      }
-      return RefreshIndicator(
-        child: content,
-        onRefresh: model.fetchProduct,
-      );
-    });
   }
 }

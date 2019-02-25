@@ -9,16 +9,17 @@ import 'package:rxdart/subjects.dart';
 import '../models/product.dart';
 import '../models/user.dart';
 import '../models/auth.dart';
+import '../models/location_data.dart';
 
-class ConnectedProductsModel extends Model {
+mixin ConnectedProductsModel on Model {
   List<Product> _products = [];
   String _selProductId;
   User _authenticatedUser;
   bool _isLoading = false;
-  final String API_KEY = 'AIzaSyBd2riPskc-aTTSxA99WTtj8KJIxfYzyZ0';
+  final String API_KEY = '';
 }
 
-class ProductsModel extends ConnectedProductsModel {
+mixin ProductsModel on ConnectedProductsModel {
   bool _showFavorites = false;
 
   List<Product> get allProducts {
@@ -56,8 +57,8 @@ class ProductsModel extends ConnectedProductsModel {
     return _showFavorites;
   }
 
-  Future<bool> addProduct(
-      String title, String description, String image, double price) async {
+  Future<bool> addProduct(String title, String description, String image,
+      double price, LocationData locationData) async {
     _isLoading = true;
     notifyListeners();
     final Map<String, dynamic> productData = {
@@ -67,13 +68,17 @@ class ProductsModel extends ConnectedProductsModel {
           'https://upload.wikimedia.org/wikipedia/commons/6/68/Chocolatebrownie.JPG',
       'price': price,
       'userEmail': _authenticatedUser.email,
-      'userId': _authenticatedUser.id
+      'userId': _authenticatedUser.id,
+      'loc_lat': locationData.latitude,
+      'loc_lng': locationData.longitude,
+      'loc_address': locationData.address
     };
     try {
       final http.Response response = await http.post(
-          'https://flutter-products.firebaseio.com/products.json?auth=${_authenticatedUser.token}',
+          'https://test-d9e23.firebaseio.com/products.json?auth=${_authenticatedUser.token}',
           body: json.encode(productData));
-
+      print(response.body);
+      print(response.statusCode);
       if (response.statusCode != 200 && response.statusCode != 201) {
         _isLoading = false;
         notifyListeners();
@@ -87,7 +92,8 @@ class ProductsModel extends ConnectedProductsModel {
           image: image,
           price: price,
           userEmail: _authenticatedUser.email,
-          userId: _authenticatedUser.id);
+          userId: _authenticatedUser.id,
+          location: locationData);
       _products.add(newProduct);
       _isLoading = false;
       notifyListeners();
@@ -105,7 +111,7 @@ class ProductsModel extends ConnectedProductsModel {
   }
 
   Future<bool> updateProduct(
-      String title, String description, String image, double price) {
+      String title, String description, String image, double price, LocationData locationData ) {
     _isLoading = true;
     notifyListeners();
     final Map<String, dynamic> updateData = {
@@ -115,11 +121,14 @@ class ProductsModel extends ConnectedProductsModel {
           'https://upload.wikimedia.org/wikipedia/commons/6/68/Chocolatebrownie.JPG',
       'price': price,
       'userEmail': selectedProduct.userEmail,
-      'userId': selectedProduct.userId
+      'userId': selectedProduct.userId,
+      'loc_lat': locationData.latitude,
+      'loc_lng': locationData.longitude,
+      'loc_address': locationData.address
     };
     return http
         .put(
-            'https://flutter-products.firebaseio.com/products/${selectedProduct.id}.json?auth=${_authenticatedUser.token}',
+            'https://test-d9e23.firebaseio.com/products/${selectedProduct.id}.json?auth=${_authenticatedUser.token}',
             body: json.encode(updateData))
         .then((http.Response reponse) {
       _isLoading = false;
@@ -129,6 +138,7 @@ class ProductsModel extends ConnectedProductsModel {
           description: description,
           image: image,
           price: price,
+          location: locationData,
           userEmail: selectedProduct.userEmail,
           userId: selectedProduct.userId);
       _products[selectedProductIndex] = updatedProduct;
@@ -149,7 +159,7 @@ class ProductsModel extends ConnectedProductsModel {
     notifyListeners();
     return http
         .delete(
-            'https://flutter-products.firebaseio.com/products/${deletedProductId}.json?auth=${_authenticatedUser.token}')
+            'https://test-d9e23.firebaseio.com/products/${deletedProductId}.json?auth=${_authenticatedUser.token}')
         .then((http.Response response) {
       _isLoading = false;
       notifyListeners();
@@ -166,7 +176,7 @@ class ProductsModel extends ConnectedProductsModel {
     notifyListeners();
     return http
         .get(
-            'https://flutter-products.firebaseio.com/products.json?auth=${_authenticatedUser.token}')
+            'https://test-d9e23.firebaseio.com/products.json?auth=${_authenticatedUser.token}')
         .then<Null>((http.Response response) {
       final List<Product> fetchedProductList = [];
       final Map<String, dynamic> productListData = json.decode(response.body);
@@ -182,15 +192,23 @@ class ProductsModel extends ConnectedProductsModel {
             description: productData['description'],
             image: productData['image'],
             price: productData['price'],
+            location: LocationData(
+                address: productData['loc_address'],
+                latitude: productData['loc_lat'],
+                longitude: productData['loc_lng']),
             userEmail: productData['userEmail'],
             userId: productData['userId'],
-            isFavorite: productData['wishlistUsers'] == null ? false : (productData['wishlistUsers'] as Map<String, dynamic>)
-                .containsKey(_authenticatedUser.id));
+            isFavorite: productData['wishlistUsers'] == null
+                ? false
+                : (productData['wishlistUsers'] as Map<String, dynamic>)
+                    .containsKey(_authenticatedUser.id));
         fetchedProductList.add(product);
       });
-      _products = onlyForUser ? fetchedProductList.where((Product product) {
-        return product.userId == _authenticatedUser.id;
-      }).toList() : fetchedProductList;
+      _products = onlyForUser
+          ? fetchedProductList.where((Product product) {
+              return product.userId == _authenticatedUser.id;
+            }).toList()
+          : fetchedProductList;
       _isLoading = false;
       notifyListeners();
       _selProductId = null;
@@ -212,17 +230,18 @@ class ProductsModel extends ConnectedProductsModel {
         image: selectedProduct.image,
         userEmail: selectedProduct.userEmail,
         userId: selectedProduct.userId,
+        location: selectedProduct.location,
         isFavorite: newFavoriteStatus);
     _products[selectedProductIndex] = updatedProduct;
     notifyListeners();
     http.Response response;
     if (newFavoriteStatus) {
       response = await http.put(
-          'https://flutter-products.firebaseio.com/products/${selectedProduct.id}/wishlistUsers/${_authenticatedUser.id}.json?auth=${_authenticatedUser.token}',
+          'https://test-d9e23.firebaseio.com/products/${selectedProduct.id}/wishlistUsers/${_authenticatedUser.id}.json?auth=${_authenticatedUser.token}',
           body: json.encode(true));
     } else {
       response = await http.delete(
-          'https://flutter-products.firebaseio.com/products/${selectedProduct.id}/wishlistUsers/${_authenticatedUser.id}.json?auth=${_authenticatedUser.token}');
+          'https://test-d9e23.firebaseio.com/products/${selectedProduct.id}/wishlistUsers/${_authenticatedUser.id}.json?auth=${_authenticatedUser.token}');
     }
     if (response.statusCode != 200 && response.statusCode != 201) {
       final Product updatedProduct = Product(
@@ -232,6 +251,7 @@ class ProductsModel extends ConnectedProductsModel {
           price: selectedProduct.price,
           image: selectedProduct.image,
           userEmail: selectedProduct.userEmail,
+          location: selectedProduct.location,
           userId: selectedProduct.userId,
           isFavorite: !newFavoriteStatus);
       _products[selectedProductIndex] = updatedProduct;
@@ -241,7 +261,9 @@ class ProductsModel extends ConnectedProductsModel {
 
   void selectProduct(String productId) {
     _selProductId = productId;
-    notifyListeners();
+    if (productId != null) {
+      notifyListeners();
+    }
   }
 
   void toggleDisplayMode() {
@@ -250,7 +272,7 @@ class ProductsModel extends ConnectedProductsModel {
   }
 }
 
-class UserModel extends ConnectedProductsModel {
+mixin UserModel on ConnectedProductsModel {
   Timer _authTimer;
   PublishSubject<bool> _userSubject = PublishSubject();
 
@@ -356,7 +378,7 @@ class UserModel extends ConnectedProductsModel {
   }
 }
 
-class UtilityModel extends ConnectedProductsModel {
+mixin UtilityModel on ConnectedProductsModel {
   bool get isLoading {
     return _isLoading;
   }

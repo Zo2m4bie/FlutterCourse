@@ -9,8 +9,12 @@ import './pages/products.dart';
 import './pages/product.dart';
 import './scoped-models/main.dart';
 import './models/product.dart';
+import 'package:map_view/map_view.dart';
+   
+String MAP_API_KEY = '';
 
 void main() {
+  MapView.setApiKey(MAP_API_KEY);
   // debugPaintSizeEnabled = true;
   // debugPaintBaselinesEnabled = true;
   // debugPaintPointersEnabled = true;

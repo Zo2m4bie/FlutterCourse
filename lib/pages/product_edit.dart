@@ -60,7 +60,8 @@ class _ProductEditPageState extends State<ProductEditPage> {
   Widget _buildDescriptionTextField(Product product) {
     if (product == null && _descriptionTextController.text.trim() == '') {
       _descriptionTextController.text = '';
-    } else if (product != null && _descriptionTextController.text.trim() == '') {
+    } else if (product != null &&
+        _descriptionTextController.text.trim() == '') {
       _descriptionTextController.text = product.description;
     }
     return EnsureVisibleWhenFocused(
@@ -173,10 +174,12 @@ class _ProductEditPageState extends State<ProductEditPage> {
   void _setImage(File image) {
     _formData['image'] = image;
   }
+
   void _submitForm(
       Function addProduct, Function updateProduct, Function setSelectedProduct,
       [int selectedProductIndex]) {
-    if (!_formKey.currentState.validate() || (_formData['image'] == null && selectedProductIndex == 1)) {
+    if (!_formKey.currentState.validate() ||
+        (_formData['image'] == null && selectedProductIndex == 1)) {
       return;
     }
     _formKey.currentState.save();

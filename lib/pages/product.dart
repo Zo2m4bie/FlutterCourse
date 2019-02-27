@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../widgets/ui_elements/title_default.dart';
 import '../models/product.dart';
 import 'package:map_view/map_view.dart';
+import '../widgets/products/product_fab.dart';
 
 class ProductPage extends StatelessWidget {
   final Product product;
@@ -19,17 +20,20 @@ class ProductPage extends StatelessWidget {
     final cameraPosition = CameraPosition(
         Location(product.location.latitude, product.location.longitude), 14.0);
     final mapView = MapView();
-    mapView.show(MapOptions(
-      mapViewType: MapViewType.normal,
-      title: 'Product Location',
-      initialCameraPosition: cameraPosition),
-      toolbarActions: [ToolbarAction('Close', 1),]);
+    mapView.show(
+        MapOptions(
+            mapViewType: MapViewType.normal,
+            title: 'Product Location',
+            initialCameraPosition: cameraPosition),
+        toolbarActions: [
+          ToolbarAction('Close', 1),
+        ]);
     mapView.onToolbarAction.listen((int id) {
-      if(id == 1){
+      if (id == 1) {
         mapView.dismiss();
       }
     });
-    mapView.onMapReady.listen((_){
+    mapView.onMapReady.listen((_) {
       mapView.setMarkers(markers);
     });
   }
@@ -95,6 +99,7 @@ class ProductPage extends StatelessWidget {
             )
           ],
         ),
+        floatingActionButton: ProductFAB(product),
       ),
     );
   }

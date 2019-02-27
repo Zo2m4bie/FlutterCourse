@@ -18,7 +18,7 @@ mixin ConnectedProductsModel on Model {
   String _selProductId;
   User _authenticatedUser;
   bool _isLoading = false;
-  final String API_KEY = 'AIzaSyBd2riPskc-aTTSxA99WTtj8KJIxfYzyZ0';
+  final String API_KEY = '';
 }
 
 mixin ProductsModel on ConnectedProductsModel {

@@ -9,7 +9,7 @@ import '../../models/location_data.dart';
 import '../../models/product.dart';
 
 class LocationInput extends StatefulWidget {
-  final String MAP_API_KEY = 'AIzaSyBzIKVACJLhjBQ_FwKrEr239DAJzeg087k';
+  final String MAP_API_KEY = '';
   final Function setLocation;
   final Product product;
 

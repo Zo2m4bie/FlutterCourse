@@ -12,13 +12,13 @@ import '../models/product.dart';
 import '../models/user.dart';
 import '../models/auth.dart';
 import '../models/location_data.dart';
+import '../shared/global_config.dart';
 
 mixin ConnectedProductsModel on Model {
   List<Product> _products = [];
   String _selProductId;
   User _authenticatedUser;
   bool _isLoading = false;
-  final String API_KEY = '';
 }
 
 mixin ProductsModel on ConnectedProductsModel {
@@ -183,7 +183,7 @@ mixin ProductsModel on ConnectedProductsModel {
       'loc_address': locationData.address
     };
     try{
-      final http.Response response = await http
+      await http
         .put(
             'https://test-d9e23.firebaseio.com/products/${selectedProduct.id}.json?auth=${_authenticatedUser.token}',
             body: json.encode(updateData));
@@ -217,7 +217,7 @@ mixin ProductsModel on ConnectedProductsModel {
     notifyListeners();
     return http
         .delete(
-            'https://test-d9e23.firebaseio.com/products/${deletedProductId}.json?auth=${_authenticatedUser.token}')
+            'https://test-d9e23.firebaseio.com/products/$deletedProductId.json?auth=${_authenticatedUser.token}')
         .then((http.Response response) {
       _isLoading = false;
       notifyListeners();
@@ -229,8 +229,11 @@ mixin ProductsModel on ConnectedProductsModel {
     });
   }
 
-  Future<Null> fetchProducts({onlyForUser = false}) {
+  Future<Null> fetchProducts({onlyForUser = false, clearExisting = false}) {
     _isLoading = true;
+    if(clearExisting) {
+      _products = [];
+    }
     notifyListeners();
     return http
         .get(
@@ -310,6 +313,7 @@ mixin ProductsModel on ConnectedProductsModel {
           description: selectedProduct.description,
           price: selectedProduct.price,
           image: selectedProduct.image,
+          imagePath: selectedProduct.imagePath,
           userEmail: selectedProduct.userEmail,
           location: selectedProduct.location,
           userId: selectedProduct.userId,
@@ -357,13 +361,13 @@ mixin UserModel on ConnectedProductsModel {
     http.Response response;
     if (mode == AuthMode.Login) {
       response = await http.post(
-        'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${API_KEY}',
+        'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=$API_KEY',
         body: json.encode(authData),
         headers: {'Content-Type': 'application/json'},
       );
     } else {
       response = await http.post(
-        'https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=${API_KEY}',
+        'https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key=$API_KEY',
         body: json.encode(authData),
         headers: {'Content-Type': 'application/json'},
       );

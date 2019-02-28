@@ -29,6 +29,8 @@ class _ProductsPageState extends State<ProductsPage> {
       child: Column(
         children: <Widget>[
           AppBar(
+            elevation:
+                Theme.of(context).platform == TargetPlatform.iOS ? 0.0 : 4.0,
             automaticallyImplyLeading: false,
             title: Text('Choose'),
           ),
@@ -55,7 +57,10 @@ class _ProductsPageState extends State<ProductsPage> {
         } else if (model.isLoading) {
           content = Center(child: CircularProgressIndicator());
         }
-        return RefreshIndicator(onRefresh: model.fetchProducts, child: content,) ;
+        return RefreshIndicator(
+          onRefresh: model.fetchProducts,
+          child: content,
+        );
       },
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'dart:async';
 import 'package:map_view/map_view.dart';
 import 'package:location/location.dart' as geoloc;
@@ -7,9 +6,9 @@ import 'package:http/http.dart' as http;
 import '../helpers/ensure_visible.dart';
 import '../../models/location_data.dart';
 import '../../models/product.dart';
+import '../../shared/global_config.dart';
 
 class LocationInput extends StatefulWidget {
-  final String MAP_API_KEY = '';
   final Function setLocation;
   final Product product;
 
@@ -80,7 +79,7 @@ class _LocationInputState extends State<LocationInput> {
   Future<String> _getAddress(double lat, double lng) async {
     Uri uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
       'latlng': '${lat.toString()},${lng.toString()}',
-      'key': widget.MAP_API_KEY
+      'key': MAP_API_KEY
     });
     print(uri.toString());
     // final http.Response response = await http.get(uri);
@@ -135,13 +134,13 @@ class _LocationInputState extends State<LocationInput> {
     }
     if (geocode) {
       final Uri uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json',
-          {'address': address, 'key': widget.MAP_API_KEY});
+          {'address': address, 'key': MAP_API_KEY});
       final http.Response response = await http.get(uri);
       print(response.statusCode);
       print(response.body);
-      final decodedResponse = json.decode(response.body);
-      final formatedAddress = decodedResponse['result'][0]['formatted_address'];
-      final coordinates = decodedResponse['result'][0]['geometry']['location'];
+     // final decodedResponse = json.decode(response.body);
+     // final formatedAddress = decodedResponse['result'][0]['formatted_address'];
+     // final coordinates = decodedResponse['result'][0]['geometry']['location'];
       _locationData = LocationData(
           address: 'Test address', //formatedAddress,
           latitude: 37.4219983, //coordinates['lat'],
@@ -154,7 +153,7 @@ class _LocationInputState extends State<LocationInput> {
     }
 
     final StaticMapProvider staticMapProvider =
-        StaticMapProvider(widget.MAP_API_KEY);
+        StaticMapProvider(MAP_API_KEY);
     final Uri staticMapUri = staticMapProvider.getStaticUriWithMarkers([
       Marker('Position', 'Position 2', _locationData.latitude,
           _locationData.longitude)

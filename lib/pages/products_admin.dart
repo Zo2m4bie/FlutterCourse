@@ -39,6 +39,8 @@ class ProductsAdminPage extends StatelessWidget {
       child: Scaffold(
         drawer: _buildSideDrawer(context),
         appBar: AppBar(
+          elevation:
+              Theme.of(context).platform == TargetPlatform.iOS ? 0.0 : 4.0,
           title: Text('Manage Products'),
           bottom: TabBar(
             tabs: <Widget>[

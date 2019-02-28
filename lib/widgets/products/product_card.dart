@@ -20,7 +20,8 @@ class ProductCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Flexible(child: TitleDefault(product.title)),
-          Flexible(child: SizedBox(
+          Flexible(
+              child: SizedBox(
             width: 8.0,
           )),
           Flexible(child: PriceTag(product.price.toString()))
@@ -74,11 +75,11 @@ class ProductCard extends StatelessWidget {
             ),
           ),
           _buildTitlePriceRow(),
+          SizedBox(height: 10.0),
           AddressTag(product.location.address),
           _buildActionButtons(context)
         ],
       ),
     );
-    ;
   }
 }

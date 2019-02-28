@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../widgets/ui_elements/adaptive_progress_indicator.dart';
 import 'package:scoped_model/scoped_model.dart';
 
 import '../scoped-models/main.dart';
@@ -31,7 +31,10 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         duration: Duration(
           milliseconds: 300,
         ));
-    _slideAnimation = Tween<Offset>(begin: Offset(0.0, -2.0), end: Offset.zero).animate(CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn),);
+    _slideAnimation =
+        Tween<Offset>(begin: Offset(0.0, -2.0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn),
+    );
   }
 
   DecorationImage _buildBackgroundImage() {
@@ -81,20 +84,22 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
   Widget _buildPasswordConfirmTextField() {
     return FadeTransition(
       opacity: CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-      child:SlideTransition(
+      child: SlideTransition(
         position: _slideAnimation,
         child: TextFormField(
-        decoration: InputDecoration(
-            labelText: 'Confirm Password',
-            filled: true,
-            fillColor: Colors.white),
-        obscureText: true,
-        validator: (String value) {
-          if (_passwordTextController.text != value && _authMode == AuthMode.Signup) {
-            return 'Passwords do not match.';
-          }
-        },
-      ),),
+          decoration: InputDecoration(
+              labelText: 'Confirm Password',
+              filled: true,
+              fillColor: Colors.white),
+          obscureText: true,
+          validator: (String value) {
+            if (_passwordTextController.text != value &&
+                _authMode == AuthMode.Signup) {
+              return 'Passwords do not match.';
+            }
+          },
+        ),
+      ),
     );
   }
 
@@ -147,6 +152,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
     final double targetWidth = deviceWidth > 550.0 ? 500.0 : deviceWidth * 0.95;
     return Scaffold(
       appBar: AppBar(
+        elevation: Theme.of(context).platform == TargetPlatform.iOS ? 0.0 : 4.0,
         title: Text('Login'),
       ),
       body: Container(
@@ -201,7 +207,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                       builder: (BuildContext context, Widget child,
                           MainModel model) {
                         return model.isLoading
-                            ? CircularProgressIndicator()
+                            ? AdaptiveProgressIndicator()
                             : RaisedButton(
                                 textColor: Colors.white,
                                 child: Text(_authMode == AuthMode.Login

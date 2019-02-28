@@ -10,7 +10,8 @@ import './pages/product.dart';
 import './scoped-models/main.dart';
 import './models/product.dart';
 import 'package:map_view/map_view.dart';
-   
+import './widgets/helpers/customer_router.dart';
+
 String MAP_API_KEY = '';
 
 void main() {
@@ -78,7 +79,7 @@ class _MyAppState extends State<MyApp> {
                 _model.allProducts.firstWhere((Product product) {
               return product.id == productId;
             });
-            return MaterialPageRoute<bool>(
+            return CustomRoute<bool>(
               builder: (BuildContext context) =>
                   !_isAuthenticated ? AuthPage() : ProductPage(product),
             );

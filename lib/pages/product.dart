@@ -73,19 +73,25 @@ class ProductPage extends StatelessWidget {
         return Future.value(false);
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(product.title),
-        ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            FadeInImage(
-              image: NetworkImage(product.image),
-              height: 300.0,
-              fit: BoxFit.cover,
-              placeholder: AssetImage('assets/food.jpg'),
+        body: CustomScrollView( slivers: <Widget>[
+          SliverAppBar(
+            expandedHeight: 256.0,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(product.title),
+              background: Hero(
+                tag: product.id,
+                child:FadeInImage(
+                image: NetworkImage(product.image),
+                height: 300.0,
+                fit: BoxFit.cover,
+                placeholder: AssetImage('assets/food.jpg'),
+              ),),
             ),
+          ),
+          SliverList(delegate: SliverChildListDelegate([
             Container(
+              alignment: Alignment.center,
               padding: EdgeInsets.all(10.0),
               child: TitleDefault(product.title),
             ),
@@ -97,8 +103,8 @@ class ProductPage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             )
-          ],
-        ),
+          ]),),
+        ],), 
         floatingActionButton: ProductFAB(product),
       ),
     );
